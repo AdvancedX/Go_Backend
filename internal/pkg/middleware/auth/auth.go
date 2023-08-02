@@ -12,10 +12,16 @@ import (
 	"time"
 )
 
-func GenerateToken(secret, username string) string {
+var currentUserKey struct{}
+
+type CurrentUser struct {
+	UserID uint
+}
+
+func GenerateToken(secret string, userid uint) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
-		"nbf":      time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		"user_id": userid,
+		"nbf":     time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -33,26 +39,38 @@ func JWTAuth(secret string) middleware.Middleware {
 				tokenString := tr.RequestHeader().Get("Authorization")
 				auths := strings.SplitN(tokenString, " ", 2)
 				if len(auths) != 2 || !strings.EqualFold(auths[0], "Token") {
-					return nil, errors.New(124, "jwt token missing", "message")
+					return nil, errors.New(999, "jwt token missing", spew.Sdump(auths))
 				}
+
 				token, err := jwt.Parse(auths[1], func(token *jwt.Token) (interface{}, error) {
+					// Don't forget to validate the alg is what you expect:
 					if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 						return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 					}
 					return []byte(secret), nil
 				})
+
 				if err != nil {
 					return nil, err
 				}
 
 				if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-					spew.Dump(claims["username"])
+					// put CurrentUser into ctx
+					if u, ok := claims["userid"]; ok {
+						ctx = WithContext(ctx, &CurrentUser{UserID: uint(u.(float64))})
+					}
 				} else {
-					return nil, errors.New(123, "Token Invalid", "message")
+					return nil, errors.New(998, "Token Invalid", spew.Sdump(token))
 				}
-
 			}
 			return handler(ctx, req)
 		}
 	}
+}
+func FromContext(ctx context.Context) *CurrentUser {
+	return ctx.Value(currentUserKey).(*CurrentUser)
+}
+
+func WithContext(ctx context.Context, user *CurrentUser) context.Context {
+	return context.WithValue(ctx, currentUserKey, user)
 }

@@ -31,7 +31,7 @@ func NewData(c *conf.Data, logger log.Logger, db *mongo.Database) (*Data, func()
 	return &Data{db: db}, cleanup, nil
 }
 
-func NewDB(c *conf.Data) *mongo.Database {
+func NewDB(c *conf.Data) (*mongo.Database, error) {
 	var (
 		client *mongo.Client
 		err    error
@@ -39,16 +39,16 @@ func NewDB(c *conf.Data) *mongo.Database {
 	)
 	// 连接MongoDB
 	if client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(c.Database.Dsn).SetConnectTimeout(5*time.Second)); err != nil {
-		fmt.Println("err")
+		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
 
 	// 检查连接
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
-		fmt.Println("err")
+		return nil, fmt.Errorf("failed to ping MongoDB: %w", err)
 	}
 
 	// 选择数据库 my_db
 	db = client.Database("kratos")
-	return db
+	return db, nil
 }

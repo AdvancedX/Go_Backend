@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
-	v1 "kratos-realworld/api/realworld/v1"
+	v1 "kratos-realworld/api/backend/v1"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
 
@@ -67,13 +67,12 @@ type ProfileRepo interface {
 type UserUsecase struct {
 	ur   UserRepo
 	pr   ProfileRepo
-	tr   TagRepo
 	jwtc *conf.JWT
 	log  *log.Helper
 }
 
-func NewUserUsecase(ur UserRepo, pr ProfileRepo, logger log.Logger, jwtc *conf.JWT) *UserUsecase {
-	return &UserUsecase{ur: ur, pr: pr, jwtc: jwtc, log: log.NewHelper(logger)}
+func NewUserUsecase(ur UserRepo, logger log.Logger, jwtc *conf.JWT) *UserUsecase {
+	return &UserUsecase{ur: ur, jwtc: jwtc, log: log.NewHelper(logger)}
 }
 func (uc *UserUsecase) generateToken(userID uint) string {
 	return auth.GenerateToken(uc.jwtc.Secret, userID)

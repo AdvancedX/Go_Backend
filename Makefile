@@ -49,6 +49,12 @@ api:
 build:
 	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
 
+.PHONY: db
+# start database
+db:
+	cd D:/mongodb-windows-x86_64-6.0.8/mongodb-win32-x86_64-windows-6.0.8/bin && \
+	mongod --dbpath=../data/db
+
 .PHONY: generate
 # generate
 generate:
@@ -62,7 +68,7 @@ all:
 	make api;
 	make config;
 	make generate;
-
+	make db;
 # show help
 help:
 	@echo ''

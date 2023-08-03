@@ -8,7 +8,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/gorilla/handlers"
-	v1 "kratos-realworld/api/realworld/v1"
+	v1 "kratos-realworld/api/backend/v1"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
 	"kratos-realworld/internal/service"
@@ -17,8 +17,8 @@ import (
 func NewSkipRoutersMatcher() selector.MatchFunc {
 
 	skipRouters := make(map[string]struct{})
-	skipRouters["/realworld.v1.RealWorld/Login"] = struct{}{}
-	skipRouters["/realworld.v1.RealWorld/Register"] = struct{}{}
+	skipRouters["/backend.v1.RealWorld/Login"] = struct{}{}
+	skipRouters["/backend.v1.RealWorld/Register"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
 		if _, ok := skipRouters[operation]; ok {
 			return false
@@ -28,7 +28,8 @@ func NewSkipRoutersMatcher() selector.MatchFunc {
 }
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, jwtc *conf.JWT, greeter *service.RealWorldService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, jwtc *conf.JWT, backend *service.BackendService, logger log.Logger) *http.Server {
+
 	var opts = []http.ServerOption{
 		http.ErrorEncoder(errorEncoder),
 		http.Middleware(
@@ -54,6 +55,11 @@ func NewHTTPServer(c *conf.Server, jwtc *conf.JWT, greeter *service.RealWorldSer
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	v1.RegisterRealWorldHTTPServer(srv, greeter)
+	v1.RegisterBackendHTTPServer(srv, backend)
+
+	r := srv.Route("/")
+	r.POST("/v1/File", CreateFileHandler(backend))
+	r.PUT("/v1/videos", UpdateFileHandler(backend))
+
 	return srv
 }

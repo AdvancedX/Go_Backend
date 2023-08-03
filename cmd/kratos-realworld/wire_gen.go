@@ -32,12 +32,13 @@ func wireApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger
 	if err != nil {
 		return nil, nil, err
 	}
+	backendRepo := data.NewBackendRepo(dataData, logger)
+	backendUsecase := biz.NewBackendUsecase(backendRepo, logger)
 	userRepo := data.NewUserRepo(dataData, logger)
-	profileRepo := data.NewProfileRepo(dataData, logger)
-	userUsecase := biz.NewUserUsecase(userRepo, profileRepo, logger, jwt)
-	realWorldService := service.NewRealWorldService(userUsecase)
-	grpcServer := server.NewGRPCServer(confServer, realWorldService, logger)
-	httpServer := server.NewHTTPServer(confServer, jwt, realWorldService, logger)
+	userUsecase := biz.NewUserUsecase(userRepo, logger, jwt)
+	backendService := service.NewBackendService(backendUsecase, userUsecase)
+	grpcServer := server.NewGRPCServer(confServer, backendService, logger)
+	httpServer := server.NewHTTPServer(confServer, jwt, backendService, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()

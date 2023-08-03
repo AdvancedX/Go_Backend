@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	v1 "kratos-realworld/api/realworld/v1"
+	v1 "kratos-realworld/api/backend/v1"
 	"kratos-realworld/internal/biz"
 )
 
-func (s *RealWorldService) Login(ctx context.Context, req *v1.LoginRequest) (reply *v1.UserReply, err error) {
+func (s *BackendService) Login(ctx context.Context, req *v1.LoginRequest) (reply *v1.UserReply, err error) {
 	rv, err := s.uc.Login(ctx, req.User.Email, req.User.Password)
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func (s *RealWorldService) Login(ctx context.Context, req *v1.LoginRequest) (rep
 	}, nil
 }
 
-func (s *RealWorldService) Register(ctx context.Context, req *v1.RegisterRequest) (reply *v1.UserReply, err error) {
+func (s *BackendService) Register(ctx context.Context, req *v1.RegisterRequest) (reply *v1.UserReply, err error) {
 	u, err := s.uc.Register(ctx, req.User.Username, req.User.Email, req.User.Password)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (s *RealWorldService) Register(ctx context.Context, req *v1.RegisterRequest
 		},
 	}, nil
 }
-func (s *RealWorldService) GetCurrentUser(ctx context.Context, req *v1.GetCurrentUserRequest) (reply *v1.UserReply, err error) {
+func (s *BackendService) GetCurrentUser(ctx context.Context, req *v1.GetCurrentUserRequest) (reply *v1.UserReply, err error) {
 	u, err := s.uc.GetCurrentUser(ctx)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (s *RealWorldService) GetCurrentUser(ctx context.Context, req *v1.GetCurren
 		},
 	}, nil
 }
-func (s *RealWorldService) UpdateUser(ctx context.Context, req *v1.UpdateUserRequest) (rep *v1.UserReply, err error) {
+func (s *BackendService) UpdateUser(ctx context.Context, req *v1.UpdateUserRequest) (rep *v1.UserReply, err error) {
 	u, err := s.uc.UpdateUser(ctx, &biz.UserUpdate{
 		Email:    req.User.GetEmail(),
 		Username: req.User.GetUsername(),

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package realworld.v1;
+package backend.v1;
 
-option go_package = "kratos-realworld/api/realworld/v1;v1";
+option go_package = "kratos-backend/api/backend/v1;v1";
 
 
 enum ErrorReason {

@@ -20,12 +20,14 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationBackendGetCurrentUser = "/backend.v1.Backend/GetCurrentUser"
+const OperationBackendGetProfile = "/backend.v1.Backend/GetProfile"
 const OperationBackendLogin = "/backend.v1.Backend/Login"
 const OperationBackendRegister = "/backend.v1.Backend/Register"
 const OperationBackendUpdateUser = "/backend.v1.Backend/UpdateUser"
 
 type BackendHTTPServer interface {
 	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*UserReply, error)
+	GetProfile(context.Context, *GetProfileRequest) (*ProfileReply, error)
 	Login(context.Context, *LoginRequest) (*UserReply, error)
 	Register(context.Context, *RegisterRequest) (*UserReply, error)
 	UpdateUser(context.Context, *UpdateUserRequest) (*UserReply, error)
@@ -37,6 +39,7 @@ func RegisterBackendHTTPServer(s *http.Server, srv BackendHTTPServer) {
 	r.POST("/api/users", _Backend_Register0_HTTP_Handler(srv))
 	r.GET("/api/user", _Backend_GetCurrentUser0_HTTP_Handler(srv))
 	r.PUT("/api/user", _Backend_UpdateUser0_HTTP_Handler(srv))
+	r.GET("/api/profiles/{username}", _Backend_GetProfile0_HTTP_Handler(srv))
 }
 
 func _Backend_Login0_HTTP_Handler(srv BackendHTTPServer) func(ctx http.Context) error {
@@ -115,8 +118,31 @@ func _Backend_UpdateUser0_HTTP_Handler(srv BackendHTTPServer) func(ctx http.Cont
 	}
 }
 
+func _Backend_GetProfile0_HTTP_Handler(srv BackendHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetProfileRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationBackendGetProfile)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetProfile(ctx, req.(*GetProfileRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ProfileReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type BackendHTTPClient interface {
 	GetCurrentUser(ctx context.Context, req *GetCurrentUserRequest, opts ...http.CallOption) (rsp *UserReply, err error)
+	GetProfile(ctx context.Context, req *GetProfileRequest, opts ...http.CallOption) (rsp *ProfileReply, err error)
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *UserReply, err error)
 	Register(ctx context.Context, req *RegisterRequest, opts ...http.CallOption) (rsp *UserReply, err error)
 	UpdateUser(ctx context.Context, req *UpdateUserRequest, opts ...http.CallOption) (rsp *UserReply, err error)
@@ -135,6 +161,19 @@ func (c *BackendHTTPClientImpl) GetCurrentUser(ctx context.Context, in *GetCurre
 	pattern := "/api/user"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationBackendGetCurrentUser))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *BackendHTTPClientImpl) GetProfile(ctx context.Context, in *GetProfileRequest, opts ...http.CallOption) (*ProfileReply, error) {
+	var out ProfileReply
+	pattern := "/api/profiles/{username}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationBackendGetProfile))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

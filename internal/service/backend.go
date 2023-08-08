@@ -10,9 +10,11 @@ type BackendService struct {
 	v1.UnimplementedBackendServer
 	bc  *biz.BackendUsecase
 	uc  *biz.UserUsecase
+	fc  *biz.FileUsecase
+	sc  *biz.ProfileUsecase
 	log *log.Helper
 }
 
-func NewBackendService(bc *biz.BackendUsecase, uc *biz.UserUsecase) *BackendService {
-	return &BackendService{bc: bc, uc: uc}
+func NewBackendService(bc *biz.BackendUsecase, uc *biz.UserUsecase, fc *biz.FileUsecase) *BackendService {
+	return &BackendService{bc: bc, uc: uc, fc: fc}
 }

@@ -2,7 +2,6 @@ package biz
 
 import (
 	"context"
-	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	v1 "kratos-realworld/api/backend/v1"
 	"kratos-realworld/internal/conf"
@@ -39,6 +38,19 @@ type UserUpdate struct {
 	Bio      string
 	Image    string
 }
+type ProfileRepo interface {
+	GetProfile(ctx context.Context, username string) (*Profile, error)
+	FollowUser(ctx context.Context, currentUserID uint, followingID uint) error
+	UnfollowUser(ctx context.Context, currentUserID uint, followingID uint) error
+	GetUserFollowingStatus(ctx context.Context, currentUserID uint, userIDs []uint) (following []bool, err error)
+}
+type Profile struct {
+	ID        uint
+	Username  string
+	Bio       string
+	Image     string
+	Following bool
+}
 
 func hashPassword(pwd string) string {
 	b, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
@@ -61,18 +73,17 @@ type UserRepo interface {
 	GetUserByID(ctx context.Context, id uint) (*User, error)
 	UpdateUser(ctx context.Context, user *User) (*User, error)
 }
-type ProfileRepo interface {
-}
 
 type UserUsecase struct {
 	ur   UserRepo
 	pr   ProfileRepo
 	jwtc *conf.JWT
+	tm   Transaction
 	log  *log.Helper
 }
 
-func NewUserUsecase(ur UserRepo, logger log.Logger, jwtc *conf.JWT) *UserUsecase {
-	return &UserUsecase{ur: ur, jwtc: jwtc, log: log.NewHelper(logger)}
+func NewUserUsecase(ur UserRepo, logger log.Logger, jwtc *conf.JWT, tm Transaction) *UserUsecase {
+	return &UserUsecase{ur: ur, jwtc: jwtc, tm: tm, log: log.NewHelper(logger)}
 }
 func (uc *UserUsecase) generateToken(userID uint) string {
 	return auth.GenerateToken(uc.jwtc.Secret, userID)
@@ -111,14 +122,14 @@ func (uc *UserUsecase) Login(ctx context.Context, email, password string) (*User
 	}, nil
 }
 func (uc *UserUsecase) GetCurrentUser(ctx context.Context) (*User, error) {
+
 	cu := auth.FromContext(ctx)
 	if cu == nil {
-		return nil, fmt.Errorf("current user not found in context")
+		panic("cu is nil")
 	}
-
 	u, err := uc.ur.GetUserByID(ctx, cu.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current user: %w", err)
+		return nil, err
 	}
 	return u, nil
 }
@@ -144,4 +155,7 @@ func (uc *UserUsecase) UpdateUser(ctx context.Context, uu *UserUpdate) (*UserLog
 		Image:    u.Image,
 		Token:    uc.generateToken(u.ID),
 	}, nil
+}
+func (uc *ProfileUsecase) GetProfile(ctx context.Context, username string) (rv *Profile, err error) {
+	return uc.pr.GetProfile(ctx, username)
 }

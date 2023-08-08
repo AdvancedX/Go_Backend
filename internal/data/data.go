@@ -13,7 +13,7 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewDB, NewUserRepo, NewBackendRepo)
+var ProviderSet = wire.NewSet(NewData, NewDB, NewUserRepo, NewBackendRepo, NewFileRepo, NewFileLocalRepo, NewTransaction)
 
 // Data .
 type Data struct {
@@ -21,6 +21,18 @@ type Data struct {
 	err    error
 	db     *mongo.Database
 	test   *mongo.Collection
+}
+
+func (d *Data) ExecTx(ctx context.Context, f func(ctx context.Context) error) error {
+	session, err := d.db.Client().StartSession()
+	if err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
+	_, err = session.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+		return nil, f(ctx)
+	})
+	return err
 }
 
 // NewData .

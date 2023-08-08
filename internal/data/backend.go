@@ -20,6 +20,9 @@ func NewBackendRepo(data *Data, logger log.Logger) biz.BackendRepo {
 		log:  log.NewHelper(logger),
 	}
 }
+func NewTransaction(d *Data) biz.Transaction {
+	return d
+}
 
 func (r *backendRepo) Save(ctx context.Context, g *biz.Backend) (*biz.Backend, error) {
 	return g, nil

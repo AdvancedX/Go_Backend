@@ -13,6 +13,7 @@ func (s *BackendService) Login(ctx context.Context, req *v1.LoginRequest) (reply
 	}
 	return &v1.UserReply{
 		User: &v1.UserReply_User{
+			Email:    rv.Email,
 			Username: rv.Username,
 			Token:    rv.Token,
 		},
@@ -50,8 +51,8 @@ func (s *BackendService) UpdateUser(ctx context.Context, req *v1.UpdateUserReque
 		Email:    req.User.GetEmail(),
 		Username: req.User.GetUsername(),
 		Password: req.User.GetPassword(),
-		//	Bio:      req.User.GetBio(),
-		//	Image:    req.User.GetImage(),
+		Bio:      req.User.GetBio(),
+		Image:    req.User.GetImage(),
 	})
 	if err != nil {
 		return nil, err

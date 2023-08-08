@@ -23,6 +23,10 @@ type userRepo struct {
 	data *Data
 	log  *log.Helper
 }
+type profileRepo struct {
+	data *Data
+	log  *log.Helper
+}
 
 func NewUserRepo(data *Data, logger log.Logger) biz.UserRepo {
 	return &userRepo{
@@ -55,9 +59,9 @@ func (r *userRepo) GetUserByEmail(ctx context.Context, email string) (*biz.User,
 	user := new(User)
 	err := collection.FindOne(ctx, filter).Decode(user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// 用户不存在
-			return nil, errors.NotFound("user", "not found by email")
+			return nil, errors.New(1, "user not found by email", "")
 		}
 		return nil, err
 	}
@@ -94,7 +98,7 @@ func (r *userRepo) GetUserByID(ctx context.Context, id uint) (*biz.User, error) 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			// 用户不存在
-			return nil, errors.NotFound("user", "not found by ID")
+			return nil, errors.New(2, "user not found by ID", "")
 		}
 		return nil, err
 	}
@@ -109,70 +113,83 @@ func (r *userRepo) GetUserByID(ctx context.Context, id uint) (*biz.User, error) 
 		PasswordHash: user.PasswordHash,
 	}, nil
 }
-func (r *userRepo) GetUserByUsername(ctx context.Context, username string) (*biz.User, error) {
-	// 创建过滤条件
-	filter := bson.M{"username": username}
+func (r *userRepo) GetUserByUsername(ctx context.Context, username string) (rv *biz.User, err error) {
+	u := new(User)
 
-	// 获取用户集合对象
+	// Assuming you have a MongoDB session called "session"
 	collection := r.data.db.Collection("users")
 
-	// 查询用户数据
-	user := new(User)
-	err := collection.FindOne(ctx, filter).Decode(user)
+	// Create a filter for the "username" field
+	filter := bson.M{"username": username}
+
+	// Perform the find operation with the filter
+	err = collection.FindOne(ctx, filter).Decode(u)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			// 用户不存在
-			return nil, errors.NotFound("user", "not found by username")
-		}
 		return nil, err
 	}
 
-	// 将查询到的用户数据转换为 biz.User 类型，并返回
 	return &biz.User{
-		ID:           user.ID,
-		Email:        user.Email,
-		Username:     user.Username,
-		Bio:          user.Bio,
-		Image:        user.Image,
-		PasswordHash: user.PasswordHash,
+		ID:           u.ID,
+		Email:        u.Email,
+		Username:     u.Username,
+		Bio:          u.Bio,
+		Image:        u.Image,
+		PasswordHash: u.PasswordHash,
 	}, nil
 }
-func (r *userRepo) UpdateUser(ctx context.Context, in *biz.User) (*biz.User, error) {
-	// 创建过滤条件
+
+func (r *userRepo) UpdateUser(ctx context.Context, in *biz.User) (rv *biz.User, err error) {
+	// Create a filter for the "username" field
 	filter := bson.M{"username": in.Username}
 
-	// 创建更新操作
+	// Create an update document with the fields to be updated
 	update := bson.M{
 		"$set": bson.M{
-			"email":        in.Email,
-			"bio":          in.Bio,
-			"passwordHash": in.PasswordHash,
-			"image":        in.Image,
+			"email":         in.Email,
+			"bio":           in.Bio,
+			"password_hash": in.PasswordHash,
+			"image":         in.Image,
 		},
 	}
 
-	// 获取用户集合对象
+	// Assuming you have a MongoDB session called "session"
 	collection := r.data.db.Collection("users")
 
-	// 执行更新操作
-	_, err := collection.UpdateOne(ctx, filter, update)
+	// Perform the update operation
+	_, err = collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return nil, err
 	}
 
-	// 查询更新后的用户数据
+	// Fetch the updated document to return to the caller
 	updatedUser := new(User)
 	err = collection.FindOne(ctx, filter).Decode(updatedUser)
 	if err != nil {
 		return nil, err
 	}
 
-	// 将更新后的用户数据转换为 biz.User 类型，并返回
 	return &biz.User{
+		ID:           updatedUser.ID,
 		Email:        updatedUser.Email,
 		Username:     updatedUser.Username,
 		Bio:          updatedUser.Bio,
 		Image:        updatedUser.Image,
 		PasswordHash: updatedUser.PasswordHash,
 	}, nil
+}
+func (r *profileRepo) GetProfile(ctx context.Context, username string) (*biz.Profile, error) {
+	collection := r.data.db.Collection("profiles")
+
+	filter := bson.M{"username": username}
+	var u biz.Profile
+	err := collection.FindOne(ctx, filter).Decode(&u)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			// 用户不存在的情况
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &u, nil
 }

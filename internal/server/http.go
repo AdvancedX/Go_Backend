@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/handlers"
 	v1 "kratos-realworld/api/backend/v1"
 	"kratos-realworld/internal/conf"
-	"kratos-realworld/internal/pkg/middleware/auth"
 	"kratos-realworld/internal/service"
 )
 
@@ -34,7 +33,7 @@ func NewHTTPServer(c *conf.Server, jwtc *conf.JWT, backend *service.BackendServi
 		http.ErrorEncoder(errorEncoder),
 		http.Middleware(
 			recovery.Recovery(),
-			selector.Server(auth.JWTAuth(jwtc.Secret)).Match(NewSkipRoutersMatcher()).Build(),
+			//selector.Server(auth.JWTAuth(jwtc.Secret)).Match(NewSkipRoutersMatcher()).Build(),
 			logging.Server(logger),
 		),
 		http.Filter(

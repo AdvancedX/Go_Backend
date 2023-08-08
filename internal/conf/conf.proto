@@ -30,7 +30,14 @@ message Data {
   message Database {
     string dsn = 1;
   }
+  message File {
+    string basePath = 1;
+    string feedbackPath = 2;
+    string filePath = 3;
+    string frontCoverPath = 4;
+  }
   Database database = 1;
+  File file =2;
 }
 message JWT{
   string secret = 1;

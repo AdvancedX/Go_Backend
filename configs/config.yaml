@@ -9,4 +9,4 @@ data:
   database:
     dsn: "mongodb://localhost:27017"
 jwt:
-  secret: "hello"
+  Secret: "hello"

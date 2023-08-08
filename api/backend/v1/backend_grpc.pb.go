@@ -23,6 +23,7 @@ const (
 	Backend_Register_FullMethodName       = "/backend.v1.Backend/Register"
 	Backend_GetCurrentUser_FullMethodName = "/backend.v1.Backend/GetCurrentUser"
 	Backend_UpdateUser_FullMethodName     = "/backend.v1.Backend/UpdateUser"
+	Backend_GetProfile_FullMethodName     = "/backend.v1.Backend/GetProfile"
 )
 
 // BackendClient is the client API for Backend service.
@@ -33,6 +34,7 @@ type BackendClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*UserReply, error)
 	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*UserReply, error)
 	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UserReply, error)
+	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*ProfileReply, error)
 }
 
 type backendClient struct {
@@ -79,6 +81,15 @@ func (c *backendClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, o
 	return out, nil
 }
 
+func (c *backendClient) GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*ProfileReply, error) {
+	out := new(ProfileReply)
+	err := c.cc.Invoke(ctx, Backend_GetProfile_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BackendServer is the server API for Backend service.
 // All implementations must embed UnimplementedBackendServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type BackendServer interface {
 	Register(context.Context, *RegisterRequest) (*UserReply, error)
 	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*UserReply, error)
 	UpdateUser(context.Context, *UpdateUserRequest) (*UserReply, error)
+	GetProfile(context.Context, *GetProfileRequest) (*ProfileReply, error)
 	mustEmbedUnimplementedBackendServer()
 }
 
@@ -105,6 +117,9 @@ func (UnimplementedBackendServer) GetCurrentUser(context.Context, *GetCurrentUse
 }
 func (UnimplementedBackendServer) UpdateUser(context.Context, *UpdateUserRequest) (*UserReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
+}
+func (UnimplementedBackendServer) GetProfile(context.Context, *GetProfileRequest) (*ProfileReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProfile not implemented")
 }
 func (UnimplementedBackendServer) mustEmbedUnimplementedBackendServer() {}
 
@@ -191,6 +206,24 @@ func _Backend_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Backend_GetProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BackendServer).GetProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Backend_GetProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BackendServer).GetProfile(ctx, req.(*GetProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Backend_ServiceDesc is the grpc.ServiceDesc for Backend service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +246,10 @@ var Backend_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateUser",
 			Handler:    _Backend_UpdateUser_Handler,
+		},
+		{
+			MethodName: "GetProfile",
+			Handler:    _Backend_GetProfile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

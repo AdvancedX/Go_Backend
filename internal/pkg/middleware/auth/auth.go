@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
@@ -17,6 +16,9 @@ var currentUserKey struct{}
 type CurrentUser struct {
 	UserID uint
 }
+
+const OperationBackendCustomCreateVideo = "/vistudio.infopage.backend.backend.v1.Backend/custom/createVideo"
+const OperationBackendCustomUpdateVideo = "/vistudio.infopage.backend.backend.v1.Backend/custom/updateVideo"
 
 func GenerateToken(secret string, userid uint) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -39,7 +41,7 @@ func JWTAuth(secret string) middleware.Middleware {
 				tokenString := tr.RequestHeader().Get("Authorization")
 				auths := strings.SplitN(tokenString, " ", 2)
 				if len(auths) != 2 || !strings.EqualFold(auths[0], "Token") {
-					return nil, errors.New(999, "jwt token missing", spew.Sdump(auths))
+					return nil, errors.New(123, "jwt token missing", "")
 				}
 
 				token, err := jwt.Parse(auths[1], func(token *jwt.Token) (interface{}, error) {
@@ -60,7 +62,7 @@ func JWTAuth(secret string) middleware.Middleware {
 						ctx = WithContext(ctx, &CurrentUser{UserID: uint(u.(float64))})
 					}
 				} else {
-					return nil, errors.New(998, "Token Invalid", spew.Sdump(token))
+					return nil, errors.New(124, "Token Invalid", "")
 				}
 			}
 			return handler(ctx, req)
@@ -70,7 +72,6 @@ func JWTAuth(secret string) middleware.Middleware {
 func FromContext(ctx context.Context) *CurrentUser {
 	return ctx.Value(currentUserKey).(*CurrentUser)
 }
-
 func WithContext(ctx context.Context, user *CurrentUser) context.Context {
 	return context.WithValue(ctx, currentUserKey, user)
 }
